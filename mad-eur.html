@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="MAD → EUR"/>
+<title>MAD → EUR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --green: #9fe870;
+    --green-d: #7ad44e;
+    --navy: #163300;
+    --bg: #f0f2f0;
+    --white: #ffffff;
+    --gray-l: #f3f4f2;
+    --gray: #6b7280;
+    --gray-d: #374151;
+    --border: #e5e7e5;
+    --text: #111;
+    --r: 18px;
+    --rs: 12px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; font-family:'DM Sans',-apple-system,sans-serif; background:var(--bg); color:var(--text); overscroll-behavior:none; }
+  body { display:flex; flex-direction:column; align-items:center; padding:env(safe-area-inset-top,20px) 0 env(safe-area-inset-bottom,20px); min-height:100dvh; }
+
+  /* LOADING */
+  #loading { position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:99;transition:opacity .4s; }
+  #loading.gone { opacity:0;pointer-events:none; }
+  .loader-mark { width:44px;height:44px;background:var(--navy);border-radius:12px;display:flex;align-items:center;justify-content:center; }
+  .spin { width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin .75s linear infinite; }
+  .load-txt { font-size:13px;color:var(--gray);font-weight:500; }
+
+  /* PAGE */
+  .page { width:100%;max-width:410px;padding:20px 16px 24px;display:flex;flex-direction:column;gap:13px;animation:fadeUp .4s ease both; }
+
+  /* HEADER */
+  .hdr { display:flex;align-items:center;justify-content:space-between; }
+  .logo { display:flex;align-items:center;gap:9px; }
+  .logo-box { width:34px;height:34px;background:var(--navy);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+  .logo-name { font-size:16px;font-weight:700;color:var(--navy);letter-spacing:-.3px; }
+  .badge { display:flex;align-items:center;gap:6px;background:var(--white);border:1px solid var(--border);border-radius:20px;padding:4px 12px; }
+  .dot { width:7px;height:7px;border-radius:50%;background:var(--green-d);animation:pulse 2s ease-in-out infinite; }
+  .dot.loading-dot { background:#f59e0b; }
+  .badge-txt { font-size:11px;font-weight:500;color:var(--gray); }
+
+  /* CARD */
+  .card { background:var(--white);border-radius:var(--r);box-shadow:0 2px 24px rgba(0,0,0,.07);overflow:hidden; }
+  .card.shake { animation:shake .38s ease; }
+
+  .field { padding:18px 18px 16px; }
+  .field.top { background:#f8fffc;border-bottom:1px solid var(--border); }
+  .f-label { font-size:10px;font-weight:600;color:#adb5bd;letter-spacing:.6px;text-transform:uppercase;margin-bottom:10px; }
+  .f-row { display:flex;align-items:center;gap:10px; }
+  .pill { display:flex;align-items:center;gap:7px;background:var(--gray-l);border-radius:30px;padding:7px 13px 7px 7px;flex-shrink:0;user-select:none; }
+  .flag { font-size:22px;line-height:1; }
+  .ccode { font-size:15px;font-weight:600;color:var(--text); }
+  .amount { flex:1;text-align:right;font-size:34px;font-weight:700;letter-spacing:-.8px;font-variant-numeric:tabular-nums;transition:color .15s; }
+  .amount.dim { color:#d1d5db; }
+
+  /* SWAP */
+  .swap-zone { position:relative;height:1px;background:var(--border); }
+  .swap-btn { position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:38px;height:38px;background:var(--white);border:2px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:5;outline:none;transition:background .15s; }
+  .swap-btn:active { background:var(--gray-l); }
+  .swap-icon { transition:transform .38s cubic-bezier(.34,1.56,.64,1); }
+  .swap-icon.spin-it { transform:rotate(180deg); }
+
+  /* RATE BAR */
+  .rate-bar { padding:13px 18px 16px;border-top:1px solid var(--border); }
+  .rate-row { display:flex;align-items:center;justify-content:space-between; }
+  .rate-lbl { font-size:13px;color:var(--gray); }
+  .rate-val { font-size:13px;font-weight:600;color:var(--text); }
+  .rate-sub { margin-top:5px;font-size:11px;color:#adb5bd;display:flex;align-items:center;justify-content:space-between; }
+  .rate-time { display:flex;align-items:center;gap:4px; }
+  .refresh-btn { background:none;border:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:500;color:var(--gray);display:flex;align-items:center;gap:3px;padding:2px 0; }
+  .refresh-btn:active { opacity:.6; }
+  .refresh-icon { transition:transform .3s; }
+  .refresh-icon.spinning { animation:spin .7s linear infinite; }
+
+  /* NUMPAD */
+  .numpad { display:grid;grid-template-columns:repeat(3,1fr);gap:9px; }
+  .key { height:62px;background:var(--white);border:none;border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-weight:500;font-size:22px;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 5px rgba(0,0,0,.07);outline:none;transition:transform .1s,background .1s;user-select:none; }
+  .key:active { transform:scale(0.91);background:var(--gray-l); }
+  .key.del { background:var(--gray-l);color:var(--gray-d); }
+  .key.dot-key { font-size:28px;font-weight:700;color:var(--gray-d); }
+
+  /* CTA */
+  .wise-btn { display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px;background:var(--navy);color:#fff;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;border:none;border-radius:var(--r);cursor:pointer;text-decoration:none;letter-spacing:-.1px;transition:opacity .15s; }
+  .wise-btn:active { opacity:.82; }
+
+  .disc { text-align:center;font-size:11px;color:#adb5bd;line-height:1.6; }
+
+  /* ANIMATIONS */
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+  @keyframes shake { 0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)} }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loader-mark">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 12L10 18L20 6" stroke="#9fe870" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+  <div class="spin"></div>
+  <span class="load-txt">Caricamento tasso live…</span>
+</div>
+
+<div class="page">
+
+  <!-- Header -->
+  <div class="hdr">
+    <div class="logo">
+      <div class="logo-box">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 12L10 18L20 6" stroke="#9fe870" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <span class="logo-name">Wise Converter</span>
+    </div>
+    <div class="badge">
+      <span class="dot" id="dot"></span>
+      <span class="badge-txt" id="badge-txt">Live</span>
+    </div>
+  </div>
+
+  <!-- Card -->
+  <div class="card" id="card">
+    <!-- Top field -->
+    <div class="field top">
+      <div class="f-label">Invii esattamente</div>
+      <div class="f-row">
+        <div class="pill" id="pill-top">
+          <span class="flag" id="flag-top">🇲🇦</span>
+          <span class="ccode" id="code-top">MAD</span>
+        </div>
+        <div class="amount dim" id="display-top">0</div>
+      </div>
+    </div>
+
+    <!-- Swap -->
+    <div class="swap-zone">
+      <button class="swap-btn" id="swap-btn" onclick="doSwap()">
+        <svg class="swap-icon" id="swap-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#163300" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Bottom field -->
+    <div class="field">
+      <div class="f-label">Il destinatario riceve</div>
+      <div class="f-row">
+        <div class="pill" id="pill-bot">
+          <span class="flag" id="flag-bot">🇪🇺</span>
+          <span class="ccode" id="code-bot">EUR</span>
+        </div>
+        <div class="amount dim" id="display-bot">0,00</div>
+      </div>
+    </div>
+
+    <!-- Rate bar -->
+    <div class="rate-bar">
+      <div class="rate-row">
+        <span class="rate-lbl">Tasso di cambio</span>
+        <span class="rate-val" id="rate-val">—</span>
+      </div>
+      <div class="rate-sub">
+        <span class="rate-time">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#adb5bd" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2" stroke-linecap="round"/></svg>
+          <span id="rate-time">—</span>
+        </span>
+        <button class="refresh-btn" id="refresh-btn" onclick="loadRate()">
+          <svg class="refresh-icon" id="refresh-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+          Aggiorna
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Numpad -->
+  <div class="numpad">
+    <button class="key" onclick="kp('1')">1</button>
+    <button class="key" onclick="kp('2')">2</button>
+    <button class="key" onclick="kp('3')">3</button>
+    <button class="key" onclick="kp('4')">4</button>
+    <button class="key" onclick="kp('5')">5</button>
+    <button class="key" onclick="kp('6')">6</button>
+    <button class="key" onclick="kp('7')">7</button>
+    <button class="key" onclick="kp('8')">8</button>
+    <button class="key" onclick="kp('9')">9</button>
+    <button class="key" onclick="kp('0')">0</button>
+    <button class="key dot-key" onclick="kp('.')">·</button>
+    <button class="key del" onclick="kp('del')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/>
+        <line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- CTA -->
+  <a href="https://wise.com/it/currency-converter/mad-to-eur-rate" target="_blank" class="wise-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+      <polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/>
+    </svg>
+    Apri Wise per trasferire
+  </a>
+
+  <div class="disc">Tasso mid-market indicativo · Solo a scopo informativo</div>
+</div>
+
+<script>
+  // ── STATE ──────────────────────────────────────────
+  let rate = 0.09221;   // fallback MAD→EUR (maggio 2026)
+  let raw  = '';
+  let swapped = false;
+
+  // ── RATE FETCH via Claude API ──────────────────────
+  async function loadRate() {
+    setBadge(true);
+    setRefresh(true);
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 120,
+          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+          messages: [{
+            role: 'user',
+            content: 'What is the current MAD to EUR exchange rate right now (1 MAD = ? EUR)? Reply ONLY with a raw JSON object, no markdown, no explanation: {"rate":0.0922,"label":"08 mag 2026"}'
+          }]
+        })
+      });
+      if (!resp.ok) throw new Error('api');
+      const data = await resp.json();
+      const txt = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+      const m = txt.match(/\{[^}]+\}/);
+      if (m) {
+        const obj = JSON.parse(m[0]);
+        if (obj.rate > 0.05 && obj.rate < 0.25) {
+          rate = obj.rate;
+          document.getElementById('rate-time').textContent = 'Aggiornato: ' + (obj.label || new Date().toLocaleDateString('it-IT'));
+        }
+      }
+    } catch(e) {
+      document.getElementById('rate-time').textContent = 'Tasso di riserva (offline)';
+    } finally {
+      setBadge(false);
+      setRefresh(false);
+      updateRateDisplay();
+      convert();
+      hideLoading();
+    }
+  }
+
+  function setBadge(loading) {
+    const dot = document.getElementById('dot');
+    const txt = document.getElementById('badge-txt');
+    dot.className = 'dot' + (loading ? ' loading-dot' : '');
+    txt.textContent = loading ? 'Aggiorno…' : 'Live';
+  }
+
+  function setRefresh(on) {
+    document.getElementById('refresh-icon').className = 'refresh-icon' + (on ? ' spinning' : '');
+    document.getElementById('refresh-btn').disabled = on;
+  }
+
+  function updateRateDisplay() {
+    const inv = (1 / rate).toFixed(3);
+    document.getElementById('rate-val').textContent = swapped
+      ? '1 EUR = ' + inv + ' MAD'
+      : inv + ' MAD = 1 EUR';
+  }
+
+  function hideLoading() {
+    document.getElementById('loading').classList.add('gone');
+  }
+
+  // ── NUMPAD ─────────────────────────────────────────
+  function kp(k) {
+    if (k === 'del') {
+      raw = raw.slice(0, -1);
+    } else if (k === '.') {
+      if (raw.includes('.')) return;
+      raw = (raw || '0') + '.';
+    } else {
+      if (raw.length >= 9) {
+        const card = document.getElementById('card');
+        card.classList.add('shake');
+        setTimeout(() => card.classList.remove('shake'), 380);
+        return;
+      }
+      raw = raw === '0' ? k : raw + k;
+    }
+    render();
+    convert();
+  }
+
+  // ── FORMAT ─────────────────────────────────────────
+  function fmt(str, forceDecimals) {
+    if (!str && str !== 0) return '';
+    const s = str.toString();
+    if (s === '' || s === '.') return s;
+    const [i, d] = s.split('.');
+    const fi = parseInt(i || '0', 10).toLocaleString('it-IT');
+    if (forceDecimals) return fi + ',' + (d || '00').padEnd(2, '0').slice(0, 2);
+    return d !== undefined ? fi + ',' + d : fi;
+  }
+
+  // ── RENDER ─────────────────────────────────────────
+  function render() {
+    const el = document.getElementById('display-top');
+    el.textContent = raw ? fmt(raw) : '0';
+    el.className = 'amount' + (raw ? '' : ' dim');
+  }
+
+  function convert() {
+    const num = parseFloat(raw) || 0;
+    const result = swapped ? num / rate : num * rate;
+    const el = document.getElementById('display-bot');
+    el.textContent = (num > 0) ? fmt(result.toFixed(2), true) : '0,00';
+    el.className = 'amount' + (num > 0 ? '' : ' dim');
+  }
+
+  // ── SWAP ───────────────────────────────────────────
+  function doSwap() {
+    swapped = !swapped;
+    document.getElementById('flag-top').textContent  = swapped ? '🇪🇺' : '🇲🇦';
+    document.getElementById('code-top').textContent  = swapped ? 'EUR' : 'MAD';
+    document.getElementById('flag-bot').textContent  = swapped ? '🇲🇦' : '🇪🇺';
+    document.getElementById('code-bot').textContent  = swapped ? 'MAD' : 'EUR';
+
+    const icon = document.getElementById('swap-icon');
+    icon.classList.add('spin-it');
+    setTimeout(() => icon.classList.remove('spin-it'), 420);
+
+    updateRateDisplay();
+    convert();
+  }
+
+  // ── INIT ───────────────────────────────────────────
+  updateRateDisplay();
+  loadRate();
+</script>
+</body>
+</html>
