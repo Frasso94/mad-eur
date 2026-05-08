@@ -718,15 +718,30 @@
     setTimeout(() => btn.classList.remove('spinning'), 400);
 
     // Swap labels
-    const label1 = document.getElementById('fieldMad').querySelector('.field-label');
-    const label2 = document.getElementById('fieldEur').querySelector('.field-label');
-    if (swapped) {
-      label1.textContent = 'Invii esattamente (EUR)';
-      label2.textContent = 'Il destinatario riceve (MAD)';
-    } else {
-      label1.textContent = 'Invii esattamente';
-      label2.textContent = 'Il destinatario riceve';
-    }
+   const label1 = document.getElementById('fieldMad').querySelector('.field-label');
+const label2 = document.getElementById('fieldEur').querySelector('.field-label');
+if (swapped) {
+  label1.textContent = 'Invii esattamente';
+  label2.textContent = 'Il destinatario riceve';
+} else {
+  label1.textContent = 'Invii esattamente';
+  label2.textContent = 'Il destinatario riceve';
+}
+
+// Swap currency pills
+const pill1 = document.getElementById('fieldMad').querySelector('.currency-pill');
+const pill2 = document.getElementById('fieldEur').querySelector('.currency-pill');
+const flag1 = pill1.querySelector('.flag');
+const flag2 = pill2.querySelector('.flag');
+const code1 = pill1.querySelector('.currency-code');
+const code2 = pill2.querySelector('.currency-code');
+
+const tmpFlag = flag1.textContent;
+const tmpCode = code1.textContent;
+flag1.textContent = flag2.textContent;
+code1.textContent = code2.textContent;
+flag2.textContent = tmpFlag;
+code2.textContent = tmpCode;
 
     updateRateDisplay();
   }
